@@ -1,0 +1,29 @@
+pragma language_version >= 0.20.0;
+
+import CompactStandardLibrary;
+
+export ledger evidenceCount: Counter;
+export ledger evidenceAccumulator: Bytes<32>;
+export ledger nullifierAccumulator: Bytes<32>;
+
+export circuit submitEvidence(
+  evidenceHash: Bytes<32>,
+  nullifier: Bytes<32>
+): [] {
+  // Extend the nullifier accumulator with this submission's nullifier.
+  // Duplicate nullifier prevention is enforced off-chain (MongoDB nullifier
+  // store + in-memory Set). The on-chain accumulator provides a tamper-proof
+  // audit trail: by replaying all transactions an auditor can reconstruct the
+  // accumulator and verify no nullifier appears twice.
+  nullifierAccumulator = disclose(persistentHash<Vector<2, Bytes<32>>>([nullifier, nullifierAccumulator]));
+  evidenceAccumulator = disclose(persistentHash<Vector<2, Bytes<32>>>([evidenceHash, evidenceAccumulator]));
+  evidenceCount.increment(1);
+}
+
+export circuit verifySubmission(
+  evidenceHash: Bytes<32>,
+  expectedAccumulator: Bytes<32>
+): Uint<8> {
+  assert(evidenceAccumulator == expectedAccumulator, "Accumulator mismatch");
+  return 1;
+}

@@ -1,0 +1,68 @@
+pragma language_version >= 0.16.0;
+
+import CompactStandardLibrary;
+
+export ledger {
+  owner: Bytes<32>;
+  vaultId: Bytes<32>;
+  timelockMinutes: Uint<64>;
+  lastHeartbeat: Uint<64>;
+  status: Uint<8>;
+  beneficiaryCount: Uint<8>;
+  beneficiaryAccumulator: Bytes<32>;
+  claimAccumulator: Bytes<32>;
+  assetHashRoot: Bytes<32>;
+}
+
+witness currentTime(): Uint<64>;
+
+export circuit createVault(
+  ownerKey: Bytes<32>,
+  vaultIdParam: Bytes<32>,
+  timelock: Uint<64>
+): [] {
+  ledger.owner = ownerKey;
+  ledger.vaultId = vaultIdParam;
+  ledger.timelockMinutes = timelock;
+  ledger.lastHeartbeat = currentTime();
+  ledger.status = 0;
+  ledger.beneficiaryCount = 0;
+  ledger.beneficiaryAccumulator = 0x0000000000000000000000000000000000000000000000000000000000000000;
+  ledger.claimAccumulator = 0x0000000000000000000000000000000000000000000000000000000000000000;
+  ledger.assetHashRoot = 0x0000000000000000000000000000000000000000000000000000000000000000;
+}
+
+export circuit addBeneficiary(ownerKey: Bytes<32>, beneficiaryKey: Bytes<32>): [] {
+  assert(ledger.owner == ownerKey, "Only the vault owner can add beneficiaries");
+  assert(ledger.status == 0, "Vault must be ACTIVE");
+  ledger.beneficiaryAccumulator = persistent_hash(beneficiaryKey, ledger.beneficiaryAccumulator);
+  ledger.beneficiaryCount = ledger.beneficiaryCount + 1;
+}
+
+export circuit recordHeartbeat(ownerKey: Bytes<32>): [] {
+  assert(ledger.owner == ownerKey, "Only the vault owner can record a heartbeat");
+  assert(ledger.status == 0, "Vault must be ACTIVE");
+  ledger.lastHeartbeat = currentTime();
+}
+
+export circuit releaseVault(): [] {
+  assert(ledger.status == 0, "Vault must be ACTIVE to release");
+  const now: Uint<64> = currentTime();
+  const threshold: Uint<64> = ledger.lastHeartbeat + ledger.timelockMinutes * 60;
+  assert(now >= threshold, "Timelock has not expired");
+  ledger.status = 2;
+}
+
+export circuit claimAsset(
+  beneficiaryKey: Bytes<32>,
+  expectedAccumulator: Bytes<32>
+): [] {
+  assert(ledger.status == 2, "Vault must be RELEASED to claim");
+  assert(
+    ledger.beneficiaryAccumulator == expectedAccumulator,
+    "Beneficiary not registered in this vault"
+  );
+  const alreadyClaimed: Bytes<32> = persistent_hash(beneficiaryKey, ledger.claimAccumulator);
+  assert(alreadyClaimed != ledger.claimAccumulator, "Beneficiary has already claimed");
+  ledger.claimAccumulator = persistent_hash(beneficiaryKey, ledger.claimAccumulator);
+}

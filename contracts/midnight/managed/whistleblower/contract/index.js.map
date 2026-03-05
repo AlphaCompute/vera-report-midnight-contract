@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../../../",
+  "sources": ["contracts/midnight/whistleblower.compact", "compiler/standard-library.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAAA;;;;;;;;;;MAQA,AAAA,cAYC;;;;;cAXC,cAAuB;cACvB,WAAoB;;;;;;;;;;;;;;;;;;;;;;;;;yCADpB,cAAuB,+BACvB,WAAoB;;;;;;;;;gDADpB,cAAuB;gDACvB,WAAoB;;;OAUrB;MAED,AAAA,gBAMC;;;;;cALC,cAAuB;cACvB,qBAA8B;;;;;;;;;;;;;;;;;;;;;;;;;yCAD9B,cAAuB,+BACvB,qBAA8B;;;;;;;;;kDAD9B,cAAuB;kDACvB,qBAA8B;;;OAI/B;;;;;;GACA;EA7BD;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAIA;;;;;;;;;yEAAqC;IACrC;;;;;;;;;yEAA6C;IAC7C;;;;;;;;;yEAA8C;;;;;;;GAuB7C;EC7BD,AAAA,kBAAA;oEAAA;;;EDQA,AAAA,iBAYC,4BAXC,cAAuB,EACvB,WAAoB;UAOpB,KAAoB,2BAAkD,WAAS;kEAAE;;;;;;;;;;;uIAAoB;IAArG;;;;;;;2HAAA,KAAoB;;yEAAA;UACpB,KAAmB,2BAAkD,cAAY;kEAAE;;;;;;;;;;;uIAAmB;IAAtG;;;;;;;2HAAA,KAAmB;;yEAAA;UACnB,KAAa;IAAb;;;;;;;;;;6FAAA,KAAa;;;;wEAAA;;GACd;EAED,AAAA,mBAMC;;sBALC,cAAuB;sBACvB,qBAA8B;;yEAEvB;;;;;;;;;;;8IAAmB;iDAAI,qBAAmB;;;GAElD;;;;;;;;;;;;;;;;;;;;IAxBD;qCAAA;;;;;;;;;;;0GAAqC;KAAA;IACrC;qCAAA;;;;;;;;;;;0GAA6C;KAAA;IAC7C;qCAAA;;;;;;;;;;;0GAA8C;KAAA;;;;;;;;;;"
+}

@@ -1,4 +1,4 @@
-# Vera Contract
+# Vera.Report: Reporting Contract
 
 This project is built on the Midnight Network.
 

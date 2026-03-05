@@ -8,6 +8,13 @@ This project is built on the Midnight Network.
 
 The platform uses zero-knowledge proofs and rate-limit nullifiers to protect whistleblowers while preventing spam. Privacy is enforced at the protocol level through the Midnight Network, a privacy-enhancing blockchain founded by Charles Hoskinson.
 
+## Deployment
+
+| | Hash |
+|---|---|
+| **Contract** | `79b734825fd136542162ce1f17b6d477583ea0e189b4944418706e62310a325d` |
+| **Transaction** | [`00e955d977facbc568c29101e92799e68c88a94570d5bf1f5c0dc6efa6ffc64c5d`](https://www.midnightexplorer.com/tx/0x97d5d5c0b796fa756b6795436bab5274808434449fb6acbfee30782afcd35273) |
+
 ## Contracts
 
 ### Whistleblower (`whistleblower.compact`)

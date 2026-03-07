@@ -76,4 +76,4 @@ contracts/
 - [Vera.Report](https://vera.report)
 - [Midnight Network](https://midnight.network)
 - [Midnight Documentation](https://docs.midnight.network)
-- [AlphaTON Capital](https://github.com/AlphaTONCapital)
+- [AlphaTON Capital](https://github.com/AlphaTONCapital/vera-report-midnight-contract)

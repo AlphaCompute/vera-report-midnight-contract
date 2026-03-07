@@ -2,7 +2,6 @@
 
 [![Built on Midnight](https://img.shields.io/badge/Built%20on-Midnight%20Network-7B3FE4?style=flat-square)](https://midnight.network)
 [![Language: Compact](https://img.shields.io/badge/Language-Compact-blue?style=flat-square)](https://docs.midnight.network)
-[![License](https://img.shields.io/github/license/AlphaTONCapital/vera-report-midnight-contract?style=flat-square)](LICENSE)
 [![TON](https://img.shields.io/badge/TON-FunC-0098EA?style=flat-square)](https://ton.org)
 
 > This project is built on the Midnight Network.

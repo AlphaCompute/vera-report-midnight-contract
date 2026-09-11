@@ -35,3 +35,16 @@ These operations use the pinned runtime's commitment implementation and encoding
 Runtime regressions cover false membership, wrong secrets, replay and evidence rebinding with all state unchanged, fresh-opening privacy, verification after intervening submissions, public transcript disclosure, substitution of public tags for secrets, client/circuit consistency, deployment isolation, zero/malformed inputs and missing legacy entry points. Full proving-key generation is run separately. CI downloads the pinned compiler with a fixed archive SHA-256 and uses a locked runtime dependency.
 
 The original vault parse failure was at line 5 (`export ledger {`). Its findings are source-level design defects, not claims of a deployed exploit. The original false-membership and replay flaws were reproduced by executing the compiler-generated evidence circuit.
+
+## Second-pass review
+
+The generated ZK IR was inspected alongside the public query transcripts: evidence/opening input limbs feed commitment hashes, while disclosed values are the computed commitment/tag and ledger operations. No further exploitable evidence-circuit defect was established in this pass. This does not establish proof-system soundness or verify a deployed contract.
+
+Additional verified build issues and fixes:
+
+- `COMPACT_SKIP_ZK=0` previously skipped proving artifacts because the shell tested string presence. Only `0` (full) and `1` (skip) are now accepted; other values fail.
+- Compact can return success when its proving-key tool is unavailable. Full builds now require nonempty prover and verifier files for both circuits. Fault-injection tests verify that a success exit without keys is rejected.
+- A manifest previously consumed a shared output directory and hashed source only after building. It now compiles into a fresh private directory, disregards inherited skip/output settings, rejects source changes during compilation, validates exact circuit exports/toolchain versions, and retains the successful artifact directory for archival. Tests reproduce stale-artifact and changing-source cases and require no manifest output on failure.
+- Compiler and language versions are also pinned in the Compact source so direct compilation cannot silently choose another toolchain. CI action references are pinned to the verified upstream commit IDs rather than mutable tags.
+
+The manifest establishes local build provenance under a trusted compiler and host, not a cryptographic attestation. An actively compromised host/compiler can forge metadata and outputs; a checksum manifest does not replace compiler supply-chain verification or deployed-key comparison.

@@ -2,24 +2,45 @@ pragma language_version >= 0.22.0;
 
 import CompactStandardLibrary;
 
+// A fresh random domain for each deployment; never a reporter identifier.
+export ledger deploymentDomain: Bytes<32>;
 export ledger evidenceCount: Counter;
-export ledger evidenceAccumulator: Bytes<32>;
-export ledger nullifierAccumulator: Bytes<32>;
-// Public commitments, never plaintext evidence or reporter identifiers.
-export ledger submittedEvidence: Set<Bytes<32>>;
-export ledger usedNullifiers: Set<Bytes<32>>;
+export ledger submittedCommitments: Set<Bytes<32>>;
+export ledger usedSubmissionTags: Set<Bytes<32>>;
 
-export circuit submitEvidence(evidenceHash: Bytes<32>, nullifier: Bytes<32>): [] {
-  assert(!usedNullifiers.member(disclose(nullifier)), "Nullifier already used");
-  usedNullifiers.insert(disclose(nullifier));
-  submittedEvidence.insert(disclose(evidenceHash));
-  nullifierAccumulator = disclose(persistentHash<Vector<2, Bytes<32>>>([nullifier, nullifierAccumulator]));
-  evidenceAccumulator = disclose(persistentHash<Vector<2, Bytes<32>>>([evidenceHash, evidenceAccumulator]));
+constructor(domain: Bytes<32>) {
+  assert(domain != default<Bytes<32>>, "Deployment domain must be nonzero");
+  deploymentDomain = disclose(domain);
+}
+
+// The opening is fresh 32-byte CSPRNG output, durably retained off-chain.
+// Neither this secret nor the unsalted evidence digest is disclosed.
+circuit commitment(evidenceHash: Bytes<32>, opening: Bytes<32>): Bytes<32> {
+  assert(opening != default<Bytes<32>>, "Opening must be nonzero");
+  return persistentCommit<Vector<3, Bytes<32>>>(
+    [pad(32, "vera:evidence:v2"), deploymentDomain, evidenceHash], opening);
+}
+
+circuit submissionTag(opening: Bytes<32>): Bytes<32> {
+  return persistentCommit<Vector<2, Bytes<32>>>(
+    [pad(32, "vera:submission:v2"), deploymentDomain], opening);
+}
+
+// Versioned names prevent old clients from interpreting an old nullifier as
+// fresh commitment randomness. No caller-supplied public commitment is trusted.
+export circuit submitEvidenceV2(evidenceHash: Bytes<32>, opening: Bytes<32>): [] {
+  const c = commitment(evidenceHash, opening);
+  const tag = submissionTag(opening);
+  assert(!usedSubmissionTags.member(disclose(tag)), "Submission opening already used");
+  usedSubmissionTags.insert(disclose(tag));
+  submittedCommitments.insert(disclose(c));
   evidenceCount.increment(1);
 }
 
-export circuit verifySubmission(evidenceHash: Bytes<32>, expectedAccumulator: Bytes<32>): Uint<8> {
-  assert(evidenceAccumulator == disclose(expectedAccumulator), "Accumulator mismatch");
-  assert(submittedEvidence.member(disclose(evidenceHash)), "Evidence not submitted");
+// No mutable accumulator argument: later submissions cannot stale this lookup.
+// Verification reveals the randomized commitment being queried, not its opening
+// or evidence hash. It is not an unlinkable proof of membership.
+export circuit verifySubmissionV2(evidenceHash: Bytes<32>, opening: Bytes<32>): Uint<8> {
+  assert(submittedCommitments.member(disclose(commitment(evidenceHash, opening))), "Evidence not submitted");
   return 1;
 }

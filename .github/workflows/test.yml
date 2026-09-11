@@ -23,3 +23,7 @@ jobs:
         env:
           COMPACTC: /tmp/compiler/bin/compactc
           COMPACT_SKIP_ZK: '1'
+      - name: Full proving artifacts and provenance
+        run: node scripts/artifact-manifest.mjs > artifact-manifest.json
+        env:
+          COMPACTC: /tmp/compiler/bin/compactc

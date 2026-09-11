@@ -1,0 +1,1 @@
+{"name":"vera-report-midnight-contract","private":true,"type":"module","scripts":{"build":"bash scripts/compile.sh","test":"npm run build && node --test tests/*.test.mjs"},"dependencies":{"@midnight-ntwrk/compact-runtime":"0.15.0"},"engines":{"node":">=22"}}

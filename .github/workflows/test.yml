@@ -1,0 +1,24 @@
+name: Contract regression
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install pinned compiler
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download compactc-v0.30.0 --repo midnightntwrk/compact --pattern compactc_v0.30.0_x86_64-unknown-linux-musl.zip --dir /tmp/compiler
+          unzip /tmp/compiler/*.zip -d /tmp/compiler/bin
+      - run: npm test
+        env:
+          COMPACTC: /tmp/compiler/bin/compactc
+          COMPACT_SKIP_ZK: '1'

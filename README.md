@@ -1,6 +1,8 @@
 # VERA evidence commitment contract
 
-The supported contract is `contracts/midnight/whistleblower.compact`. It records public evidence commitments, rejects reused nullifiers and verifies evidence membership against the current accumulator. It does not encrypt evidence, authenticate reporters, prove report truth or enforce a per-person rate limit. A caller can generate fresh nullifiers. Public commitments and transaction timing remain observable.
+**Review candidate only: do not deploy this revision until the disclosure and migration blockers in the security review are resolved.**
+
+The build target is `contracts/midnight/whistleblower.compact`. It records public evidence commitments, rejects reused nullifiers and verifies evidence membership against the current accumulator. It does not encrypt evidence, authenticate reporters, prove report truth or enforce a per-person rate limit. A caller can generate fresh nullifiers. Public commitments and transaction timing remain observable.
 
 ## Build and test
 
@@ -12,7 +14,7 @@ COMPACTC=/path/to/compactc COMPACT_SKIP_ZK=1 npm test
 COMPACTC=/path/to/compactc npm run build
 ```
 
-The first command compiles executable circuits and runs adversarial runtime tests without proving keys. The full build generates proving artifacts. Neither test is a live network acceptance run.
+The test command compiles executable circuits and runs adversarial runtime tests without proving keys. The full build generates proving artifacts. Neither test is a live network acceptance run.
 
 ## Deployment boundary
 

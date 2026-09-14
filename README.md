@@ -1,78 +1,31 @@
-# Vera.Report: Reporting Contract
+# VERA evidence commitment contract
 
-[![Built on Midnight](https://img.shields.io/badge/Built%20on-Midnight%20Network-7B3FE4?style=flat-square)](https://midnight.network)
-[![Language: Compact](https://img.shields.io/badge/Language-Compact-blue?style=flat-square)](https://docs.midnight.network)
-[![TON](https://img.shields.io/badge/TON-FunC-0098EA?style=flat-square)](https://ton.org)
+Records randomized evidence commitments on Midnight. Evidence digests and commitment openings stay private to the caller/prover. The contract verifies actual membership and prevents reusing the same opening within a deployment. It does not encrypt files, authenticate reporters, establish report truth or provide per-person rate limiting.
 
-> This project is built on the Midnight Network.
+## Build and test
 
----
+Use Node 22 or later and Compact **0.30.0**, targeting ledger 8 and compact-runtime **0.15.0**. Install the compiler from the official [release](https://github.com/midnightntwrk/compact/releases/tag/compactc-v0.30.0).
 
-## About Vera.Report
-
-[**Vera.Report**](https://vera.report) is an anonymous whistleblowing platform that enables real-time, anonymous reporting of fraud, waste, and abuse through smartphones via Telegram Messenger.
-
-- **Zero identity data** — submitted evidence is technically impossible to access without permission from the person who provided it, eliminating breach and subpoena risks.
-- **Zero-knowledge proofs** — privacy is enforced at the protocol level through the Midnight Network, a privacy-enhancing blockchain founded by Charles Hoskinson.
-- **Rate-limit nullifiers** — prevent spam while preserving full anonymity.
-
----
-
-## Deployment
-
-| | Hash |
-|---|---|
-| **Contract** | `79b734825fd136542162ce1f17b6d477583ea0e189b4944418706e62310a325d` |
-| **Transaction** | [`00e955d977facbc568c29101e92799e68c88a94570d5bf1f5c0dc6efa6ffc64c5d`](https://www.midnightexplorer.com/tx/0x97d5d5c0b796fa756b6795436bab5274808434449fb6acbfee30782afcd35273) |
-
----
-
-## Contracts
-
-### Whistleblower (`whistleblower.compact`)
-
-The core evidence submission contract. Each report is hashed and committed on-chain via a rolling accumulator, producing a tamper-proof audit trail without revealing the content or identity of the submitter.
-
-| Circuit | Description |
-|---|---|
-| `submitEvidence` | Accepts an evidence hash and a nullifier, extends both the evidence and nullifier accumulators, and increments the on-chain evidence counter. |
-| `verifySubmission` | Allows anyone to verify that a specific evidence hash is included in the current accumulator. |
-
-### Vault (`vault.compact`)
-
-A dead-man's-switch vault for protected asset release. An owner locks assets behind a heartbeat-based timelock; if the owner stops checking in, designated beneficiaries can claim the assets.
-
-| Circuit | Description |
-|---|---|
-| `createVault` | Initializes a vault with an owner key, ID, and configurable timelock duration. |
-| `addBeneficiary` | Owner registers a beneficiary via an accumulator commitment. |
-| `recordHeartbeat` | Owner resets the timelock countdown — the "proof of life" signal. |
-| `releaseVault` | Permissionless release once the timelock has expired (owner inactive). |
-| `claimAsset` | Beneficiary claims assets from a released vault (single-claim enforced). |
-
-### TON Bridge (`midnit_ton.fc`)
-
-FunC contract scaffold for the TON blockchain integration layer.
-
----
-
-## Project Structure
-
-```
-contracts/
-  imports/
-    stdlib.fc               # TON standard library
-  midnight/
-    whistleblower.compact   # Anonymous evidence submission (Compact)
-    vault.compact           # Dead-man's-switch vault (Compact)
-  midnit_ton.fc             # TON bridge contract (FunC)
+```sh
+npm ci
+COMPACTC=/path/to/compactc COMPACT_SKIP_ZK=1 npm test
+COMPACTC=/path/to/compactc npm run build
 ```
 
----
+Tests execute generated circuits. The full build generates proving artifacts. Neither is live network acceptance.
 
-## Links
+## V2 protocol
 
-- [Vera.Report](https://vera.report)
-- [Midnight Network](https://midnight.network)
-- [Midnight Documentation](https://docs.midnight.network)
-- [AlphaTON Capital](https://github.com/AlphaTONCapital/vera-report-midnight-contract)
+Initialize a fresh deployment with `createDeploymentDomain()` from `client/commitments.mjs`. For each new submission, generate `createOpening()` and persist it in protected storage before sending a transaction. Call `submitEvidenceV2(evidenceHash, opening)`. Use the same retained opening to reconcile that submission or call `verifySubmissionV2(evidenceHash, opening)`.
+
+Only a domain-separated randomized commitment and replay tag are public. `publicReceipt(domain, evidenceHash, opening)` reproduces these values with the pinned runtime encoding and excludes the secrets. Never send the opening, evidence hash, circuit proof inputs or private storage records to logs, public signals, telemetry or an untrusted proof server. Randomness quality cannot be proved by this circuit: callers must use fresh CSPRNG output.
+
+Verification reveals which randomized commitment is queried. Transaction timing, counts, payer metadata and repeated verification remain observable. This is not an unlinkable anonymous membership protocol.
+
+## Migration
+
+**This is a breaking protocol requiring a new deployment and application integration.** Old circuit names are absent, so existing clients fail rather than reuse old nullifiers as secrets. Historical commitments are not imported. Preserve old addresses and receipts with their original verification semantics. Follow [migration instructions](docs/MIGRATION.md) before deployment.
+
+The unsafe vault and empty TON bridge have been removed from this branch. Their original source remains in upstream git history; this repository supplies no asset custody or bridge implementation.
+
+See the [security review](docs/SECURITY-REVIEW.md) for findings, fixes and remaining assurance limits.

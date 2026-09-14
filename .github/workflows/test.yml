@@ -1,0 +1,29 @@
+name: Contract regression
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Install pinned compiler
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download compactc-v0.30.0 --repo midnightntwrk/compact --pattern compactc_v0.30.0_x86_64-unknown-linux-musl.zip --dir /tmp/compiler
+          echo "06641b55befd35384ece539f7b12b65cb2cf6fb49996d27ef17a02fcacad4d2d  /tmp/compiler/compactc_v0.30.0_x86_64-unknown-linux-musl.zip" | sha256sum --check --strict
+          unzip /tmp/compiler/*.zip -d /tmp/compiler/bin
+      - run: npm test
+        env:
+          COMPACTC: /tmp/compiler/bin/compactc
+          COMPACT_SKIP_ZK: '1'
+      - name: Full proving artifacts and provenance
+        run: node scripts/artifact-manifest.mjs > artifact-manifest.json
+        env:
+          COMPACTC: /tmp/compiler/bin/compactc

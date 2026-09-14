@@ -55,3 +55,11 @@ test('manifest refuses to certify sources changed during compilation', t => {
   assert.equal(r.stdout, '');
   assert.match(r.stderr, /Build input changed/);
 });
+
+test('ordinary full build cannot reuse keys from an earlier successful build', t => {
+  const f = fixture(t);
+  assert.equal(f.run(false, { FAKE_KEYS: '1' }).status, 0);
+  const result = f.run(false);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Missing proving artifact/);
+});

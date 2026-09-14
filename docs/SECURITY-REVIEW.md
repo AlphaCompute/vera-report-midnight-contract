@@ -48,3 +48,13 @@ Additional verified build issues and fixes:
 - Compiler and language versions are also pinned in the Compact source so direct compilation cannot silently choose another toolchain. CI action references are pinned to the verified upstream commit IDs rather than mutable tags.
 
 The manifest establishes local build provenance under a trusted compiler and host, not a cryptographic attestation. An actively compromised host/compiler can forge metadata and outputs; a checksum manifest does not replace compiler supply-chain verification or deployed-key comparison.
+
+## September 14 contract and application integration review
+
+Re-reviewed the V2 source against VERA staging `f8e1ffdffca0c1c175e45360f7162bc746a72a2d`. The application's `whistleblowerV2.compact` is byte-identical to this contract. The separately installed client helper and application AES-GCM opening adapter produce the same commitments/tags; generated circuits accept them and reject wrong evidence and replay. An additional mixed-history test performs 24 submissions with repeated evidence, altered-opening attacks and serialized-state restoration, checking membership and counts throughout.
+
+A new build regression reproduced stale-key acceptance in the ordinary `npm run build` path: a compiler exiting zero without producing keys inherited old artifacts and passed. Compilation now uses a fresh directory and publishes only after checking the new output. Skip builds also cannot retain old proving keys. The isolated manifest path already rejected this case.
+
+Application integration findings are addressed in a companion VERA change: fail closed on missing newly compiled keys; support explicitly selected V2 deployment constructor arguments/assets; require a successful finalized deployment receipt and report its actual transaction hash; compare deployed V2 verifier keys using the SDK before accepting a matching deployment domain. The prior direct-call workaround skipped `findDeployedContract` and therefore also skipped its key comparison. Tests cover the new boundaries, including real SDK comparison against ledger-v8 contract operations.
+
+No V2 circuit semantics changed in this review. The upstream default branch still contains the legacy membership defect until this PR is merged. V2 activation, actual deployed keys/maintenance authority, prover confidentiality, live finalization and independent review remain external acceptance requirements. The repository is publicly visible; do not place confidential operational findings or credentials here.

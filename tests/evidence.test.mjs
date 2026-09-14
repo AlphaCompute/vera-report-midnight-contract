@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createConstructorContext, createCircuitContext, dummyContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { ContractState, createConstructorContext, createCircuitContext, dummyContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { Contract, ledger } from '../contracts/midnight/managed/whistleblower/contract/index.js';
 import { createOpening, createDeploymentDomain, publicReceipt } from '../client/commitments.mjs';
 const key = '00'.repeat(32);
@@ -119,4 +119,30 @@ test('secure generators produce independent nonzero 32-byte values', () => {
   const values = [createOpening(), createOpening(), createDeploymentDomain()];
   for (const value of values) { assert.equal(value.length, 32); assert(value.some(byte => byte !== 0)); }
   assert.equal(new Set(values.map(value => Buffer.from(value).toString('hex'))).size, 3);
+});
+
+test('mixed adversarial histories preserve membership and count across ledger serialization', () => {
+  const contract = new Contract({});
+  const domain = createDeploymentDomain();
+  const initial = contract.initialState(createConstructorContext({}, key), domain);
+  let context = createCircuitContext(dummyContractAddress(), key, initial.currentContractState, initial.currentPrivateState);
+  const accepted = [];
+  for (let i = 0; i < 24; i++) {
+    const hash = bytes(i % 4 + 1), opening = createOpening();
+    context = contract.circuits.submitEvidenceV2(context, hash, opening).context;
+    accepted.push({ hash, opening });
+    // Recreate a reader from serialized public state, not the submitting instance.
+    initial.currentContractState.data = context.currentQueryContext.state;
+    const restored = ContractState.deserialize(initial.currentContractState.serialize());
+    const reader = createCircuitContext(dummyContractAddress(), key, restored, {});
+    const previous = accepted[Math.floor(i / 2)];
+    assert.equal(contract.circuits.verifySubmissionV2(reader, previous.hash, previous.opening).result, 1n);
+    const changed = new Uint8Array(previous.opening); changed[i % 32] ^= 1;
+    assert.throws(() => contract.circuits.verifySubmissionV2(reader, previous.hash, changed), /Evidence not submitted/);
+    assert.throws(() => contract.circuits.submitEvidenceV2(reader, hash, previous.opening), /already used/);
+    const state = ledger(context.currentQueryContext.state);
+    assert.equal(state.evidenceCount, BigInt(i + 1));
+    assert.equal(state.submittedCommitments.size(), BigInt(i + 1));
+    assert.equal(state.usedSubmissionTags.size(), BigInt(i + 1));
+  }
 });
